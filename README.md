@@ -62,6 +62,11 @@ curl http://localhost:8001/metrics
 
 ## 5) Kubernetes deployment instructions
 
+Create ns :
+```bash
+kubectl create ns agnos-devops
+```
+
 Create secret (demo):
 ```bash
 kubectl apply -f k8s/base/secret.yaml.example
