@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-dashboard-agnos-overview
-  namespace: agnos-devops
+  namespace: agnos-monitoring
 data:
   agnos-overview.json: |
     {

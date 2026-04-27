@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: worker
-  namespace: agnos-devops
 spec:
   replicas: 1
   selector:
@@ -15,15 +14,15 @@ spec:
     spec:
       containers:
         - name: worker
-          image: ghcr.io/example/agnos-worker:latest
+          image: ghcr.io/sornsub/agnos-worker:placeholder
+          imagePullPolicy: Always
           ports:
             - containerPort: 8001
           envFrom:
             - configMapRef:
                 name: app-config
           env:
-            - name: DATABASE_URL
-              value: postgresql+psycopg2://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)
+
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
@@ -39,6 +38,8 @@ spec:
                 secretKeyRef:
                   name: app-secret
                   key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: postgresql+psycopg2://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)
           livenessProbe:
             tcpSocket:
               port: 8001

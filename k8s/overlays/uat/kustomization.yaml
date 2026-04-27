@@ -1,7 +1,18 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: agnos-devops-uat
+
 resources:
+  - namespace.yaml
   - ../../base
+  - secret.yaml
+  
+images:
+  - name: ghcr.io/sornsub/agnos-api
+    newTag: uat-latest
+  - name: ghcr.io/sornsub/agnos-worker
+    newTag: uat-latest
+
 patches:
   - target:
       kind: Deployment

@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-datasources
-  namespace: agnos-devops
+  namespace: agnos-monitoring
 data:
   datasources.yaml: |
     apiVersion: 1

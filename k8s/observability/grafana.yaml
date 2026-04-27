@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: grafana
-  namespace: agnos-devops
+  namespace: agnos-monitoring
   labels:
     app: grafana
 spec:
@@ -47,7 +47,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-dashboards-provider
-  namespace: agnos-devops
+  namespace: agnos-monitoring
 data:
   dashboards.yaml: |
     apiVersion: 1
@@ -65,7 +65,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: grafana
-  namespace: agnos-devops
+  namespace: agnos-monitoring
   labels:
     app: grafana
 spec:

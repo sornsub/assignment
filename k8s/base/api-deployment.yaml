@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api
-  namespace: agnos-devops
 spec:
   replicas: 1
   selector:
@@ -15,15 +14,15 @@ spec:
     spec:
       containers:
         - name: api
-          image: ghcr.io/example/agnos-api:latest
+          image: ghcr.io/sornsub/agnos-api:placeholder
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
           envFrom:
             - configMapRef:
                 name: app-config
           env:
-            - name: DATABASE_URL
-              value: postgresql+psycopg2://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)
+
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
@@ -39,6 +38,8 @@ spec:
                 secretKeyRef:
                   name: app-secret
                   key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: postgresql+psycopg2://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)
           readinessProbe:
             httpGet:
               path: /ready

@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometheus-config
-  namespace: agnos-devops
+  namespace: agnos-monitoring
 data:
   prometheus.yml: |
     global:
@@ -24,7 +24,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prometheus
-  namespace: agnos-devops
+  namespace: agnos-monitoring
 spec:
   replicas: 1
   selector:
@@ -66,7 +66,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: prometheus
-  namespace: agnos-devops
+  namespace: agnos-monitoring
 spec:
   selector:
     app: prometheus
