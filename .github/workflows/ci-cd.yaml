@@ -38,6 +38,9 @@ jobs:
           echo "API_IMAGE=${REGISTRY}/${IMAGE_OWNER}/${API_IMAGE_NAME}:${ENV_NAME}-${GITHUB_RUN_NUMBER}-${SHORT_SHA}" >> $GITHUB_ENV
           echo "WORKER_IMAGE=${REGISTRY}/${IMAGE_OWNER}/${WORKER_IMAGE_NAME}:${ENV_NAME}-${GITHUB_RUN_NUMBER}-${SHORT_SHA}" >> $GITHUB_ENV
 
+          echo "API_IMAGE_LATEST=${REGISTRY}/${IMAGE_OWNER}/${API_IMAGE_NAME}:${ENV_NAME}-latest" >> $GITHUB_ENV
+          echo "WORKER_IMAGE_LATEST=${REGISTRY}/${IMAGE_OWNER}/${WORKER_IMAGE_NAME}:${ENV_NAME}-latest" >> $GITHUB_ENV
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -108,7 +111,9 @@ jobs:
         with:
           context: app/api
           file: app/api/Dockerfile
-          tags: ${{ env.API_IMAGE }}
+          tags: |
+            ${{ env.API_IMAGE }}
+            ${{ env.API_IMAGE_LATEST }}
           push: true
 
       - name: Push Worker image to GHCR
@@ -117,17 +122,23 @@ jobs:
         with:
           context: app/worker
           file: app/worker/Dockerfile
-          tags: ${{ env.WORKER_IMAGE }}
+          tags: |
+            ${{ env.WORKER_IMAGE }}
+            ${{ env.WORKER_IMAGE_LATEST }}
           push: true
 
       - name: Show image tags
         run: |
-          echo "API image: $API_IMAGE"
-          echo "Worker image: $WORKER_IMAGE"
+          echo "API version image: $API_IMAGE"
+          echo "API latest image: $API_IMAGE_LATEST"
+          echo "Worker version image: $WORKER_IMAGE"
+          echo "Worker latest image: $WORKER_IMAGE_LATEST"
 
       - name: Mocked deploy
         run: |
           echo "Mock deploy to environment: $ENV_NAME"
-          echo "API image would be deployed as: $API_IMAGE"
-          echo "Worker image would be deployed as: $WORKER_IMAGE"
+          echo "API version image would be deployed as: $API_IMAGE"
+          echo "API latest image would be deployed as: $API_IMAGE_LATEST"
+          echo "Worker version image would be deployed as: $WORKER_IMAGE"
+          echo "Worker latest image would be deployed as: $WORKER_IMAGE_LATEST"
           echo "No Kubernetes credentials required by default in this assignment."
