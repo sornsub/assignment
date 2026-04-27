@@ -6,72 +6,472 @@ metadata:
 data:
   agnos-overview.json: |
     {
-      "title": "Agnos DevOps Overview",
-      "uid": "agnos-overview",
-      "schemaVersion": 39,
-      "version": 1,
-      "refresh": "30s",
-      "timezone": "browser",
-      "tags": ["agnos", "devops", "observability"],
-      "templating": {
+      "annotations": {
         "list": [
           {
-            "name": "env",
-            "type": "custom",
-            "label": "Environment",
-            "query": "dev,uat,prod",
-            "current": {
-              "selected": true,
-              "text": "dev",
-              "value": "dev"
+            "builtIn": 1,
+            "datasource": {
+              "type": "grafana",
+              "uid": "-- Grafana --"
             },
-            "includeAll": true,
-            "allValue": ".*",
-            "multi": false
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
           }
         ]
       },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
       "panels": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {
+                  "options": {
+                    "0": {
+                      "index": 0,
+                      "text": "DOWN"
+                    },
+                    "1": {
+                      "index": 1,
+                      "text": "UP"
+                    }
+                  },
+                  "type": "value"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 6,
+            "x": 0,
+            "y": 0
+          },
           "id": 1,
-          "title": "Targets Up",
-          "type": "stat",
-          "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0},
-          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
           "targets": [
             {
-              "refId": "A",
-              "expr": "sum(up{env=~\"$env\"})"
+              "expr": "(max(up{job=~\".*api.*\",env=~\"$environment\",service=~\"$service\"}) or max(up{job=~\".*api.*\"}))",
+              "legendFormat": "",
+              "refId": "A"
             }
-          ]
+          ],
+          "title": "API up status",
+          "type": "stat"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 6,
+            "x": 6,
+            "y": 0
+          },
           "id": 2,
-          "title": "API Request Rate",
-          "type": "timeseries",
-          "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
-          "datasource": {"type": "prometheus", "uid": "prometheus"},
           "targets": [
             {
-              "refId": "A",
-              "expr": "sum(rate(http_requests_total{env=~\"$env\",service=\"api\"}[5m])) by (env)",
-              "legendFormat": "{{env}}"
+              "expr": "(sum(rate(http_requests_total{job=~\".*api.*\",env=~\"$environment\",service=~\"$service\"}[5m])) or sum(rate(http_requests_total{job=~\".*api.*\"}[5m])))",
+              "legendFormat": "requests/sec",
+              "refId": "A"
             }
-          ]
+          ],
+          "title": "API Request Rate",
+          "type": "timeseries"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 6,
+            "x": 12,
+            "y": 0
+          },
           "id": 3,
-          "title": "Worker Success Count (1h)",
-          "type": "timeseries",
-          "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
-          "datasource": {"type": "prometheus", "uid": "prometheus"},
           "targets": [
             {
-              "refId": "A",
-              "expr": "sum(increase(worker_job_success_total{env=~\"$env\",service=\"worker\"}[1h])) by (env)",
-              "legendFormat": "{{env}}"
+              "expr": "(sum(rate(http_requests_total{job=~\".*api.*\",status=~\"5..\",env=~\"$environment\",service=~\"$service\"}[5m])) or sum(rate(http_requests_total{job=~\".*api.*\",status=~\"5..\"}[5m])))",
+              "legendFormat": "5xx/sec",
+              "refId": "A"
             }
-          ]
+          ],
+          "title": "API error rate",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 6,
+            "x": 18,
+            "y": 0
+          },
+          "id": 4,
+          "targets": [
+            {
+              "expr": "(histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=~\".*api.*\",env=~\"$environment\",service=~\"$service\"}[5m])) by (le)) or histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=~\".*api.*\"}[5m])) by (le)))",
+              "legendFormat": "p95",
+              "refId": "A"
+            }
+          ],
+          "title": "API p95 latency",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "description": "Optional: only returns data when kube-state-metrics/cAdvisor metrics are available in the selected Prometheus.",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 0,
+            "y": 7
+          },
+          "id": 5,
+          "targets": [
+            {
+              "expr": "(sum(increase(kube_pod_container_status_restarts_total{pod=~\"api.*\",env=~\"$environment\"}[1h])) or sum(increase(kube_pod_container_status_restarts_total{pod=~\"api.*\"}[1h])))",
+              "legendFormat": "restarts (1h)",
+              "refId": "A"
+            }
+          ],
+          "title": "API pod/container restarts",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "dateTimeAsIso"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 8,
+            "y": 7
+          },
+          "id": 6,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          },
+          "targets": [
+            {
+              "expr": "(max(worker_last_success_timestamp{env=~\"$environment\",service=~\"worker|$service\"}) or max(worker_last_success_timestamp)) * 1000",
+              "legendFormat": "last_success",
+              "refId": "A"
+            }
+          ],
+          "title": "Worker last successful run timestamp",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 16,
+            "y": 7
+          },
+          "id": 7,
+          "targets": [
+            {
+              "expr": "(sum(increase(worker_job_success_total{env=~\"$environment\",service=~\"worker|$service\"}[1h])) or sum(increase(worker_job_success_total[1h])))",
+              "legendFormat": "success (1h)",
+              "refId": "A"
+            }
+          ],
+          "title": "Worker Success Count (1h)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 0,
+            "y": 14
+          },
+          "id": 8,
+          "targets": [
+            {
+              "expr": "(sum(increase(worker_job_failures_total{env=~\"$environment\",service=~\"worker|$service\"}[1h])) or sum(increase(worker_job_failures_total[1h])))",
+              "legendFormat": "failures (1h)",
+              "refId": "A"
+            }
+          ],
+          "title": "Worker job failure count",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 8,
+            "y": 14
+          },
+          "id": 9,
+          "targets": [
+            {
+              "expr": "(sum(increase(worker_retry_count_total{env=~\"$environment\",service=~\"worker|$service\"}[1h])) or sum(increase(worker_retry_count_total[1h])))",
+              "legendFormat": "retries (1h)",
+              "refId": "A"
+            }
+          ],
+          "title": "Worker retry count",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 120
+                  },
+                  {
+                    "color": "red",
+                    "value": 300
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 16,
+            "y": 14
+          },
+          "id": 10,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          },
+          "targets": [
+            {
+              "expr": "(time() - (max(worker_last_success_timestamp{env=~\"$environment\",service=~\"worker|$service\"}) or max(worker_last_success_timestamp)))",
+              "legendFormat": "freshness_seconds",
+              "refId": "A"
+            }
+          ],
+          "title": "Worker freshness seconds",
+          "type": "stat"
         }
-      ]
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "style": "dark",
+      "tags": [
+        "agnos",
+        "devops",
+        "observability"
+      ],
+      "templating": {
+        "list": [
+          {
+            "current": {
+              "selected": true,
+              "text": "Prometheus",
+              "value": "prometheus"
+            },
+            "includeAll": false,
+            "label": "Prometheus Datasource",
+            "multi": false,
+            "name": "DS_PROMETHEUS",
+            "options": [],
+            "query": "prometheus",
+            "refresh": 1,
+            "regex": "",
+            "skipUrlSync": false,
+            "type": "datasource"
+          },
+          {
+            "name": "environment",
+            "type": "query",
+            "label": "Environment",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${DS_PROMETHEUS}"
+            },
+            "query": {
+              "query": "label_values(up, env)",
+              "refId": "StandardVariableQuery"
+            },
+            "refresh": 2,
+            "includeAll": true,
+            "allValue": ".*",
+            "multi": false,
+            "current": {
+              "selected": true,
+              "text": "All",
+              "value": "$__all"
+            }
+          },
+          {
+            "name": "service",
+            "type": "query",
+            "label": "Service",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${DS_PROMETHEUS}"
+            },
+            "query": {
+              "query": "label_values(up, service)",
+              "refId": "StandardVariableQuery"
+            },
+            "refresh": 2,
+            "includeAll": true,
+            "allValue": ".*",
+            "multi": false,
+            "current": {
+              "selected": true,
+              "text": "All",
+              "value": "$__all"
+            }
+          }
+        ]
+      },
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Agnos DevOps Overview",
+      "uid": "agnos-overview",
+      "version": 1,
+      "weekStart": ""
     }
