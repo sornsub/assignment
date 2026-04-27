@@ -22,7 +22,6 @@ spec:
             - configMapRef:
                 name: app-config
           env:
-
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:

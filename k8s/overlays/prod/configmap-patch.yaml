@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: app-config
 data:
-  APP_ENV: ""
+  APP_ENV: prod
   LOG_LEVEL: INFO
   WORKER_INTERVAL_SECONDS: "30"
   WORKER_MAX_RETRIES: "3"
