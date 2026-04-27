@@ -78,6 +78,7 @@ kubectl apply -k k8s/overlays/prod
 Apply observability stack:
 
 ```bash
+kubectl create ns agnos-monitoring
 kubectl apply -f k8s/observability/
 ```
 
