@@ -1,0 +1,26 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus Local
+    uid: prometheus-local
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+
+  - name: Prometheus UAT
+    uid: prometheus-uat
+    type: prometheus
+    access: proxy
+    # Uses PROMETHEUS_UAT_URL (default placeholder in docker-compose: http://prometheus-uat:9090)
+    url: ${PROMETHEUS_UAT_URL}
+    editable: true
+
+  - name: Prometheus PROD
+    uid: prometheus-prod
+    type: prometheus
+    access: proxy
+    # Uses PROMETHEUS_PROD_URL (default placeholder in docker-compose: http://prometheus-prod:9090)
+    url: ${PROMETHEUS_PROD_URL}
+    editable: true

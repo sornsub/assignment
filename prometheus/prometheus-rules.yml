@@ -1,0 +1,47 @@
+groups:
+  - name: agnos-alerts
+    rules:
+      - alert: HighApiErrorRate
+        expr: sum(rate(http_request_errors_total{path!="/metrics"}[5m])) / clamp_min(sum(rate(http_requests_total{path!="/metrics"}[5m])), 1) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API error rate"
+          description: "API error rate has exceeded 5% for 5 minutes."
+
+      - alert: HighApiLatencyP95
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 0.75
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency"
+          description: "API p95 latency is above 750ms for 10 minutes."
+
+      - alert: WorkerStalled
+        expr: time() - max(worker_last_success_timestamp) > 900
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Worker stalled"
+          description: "Worker has not completed successfully for over 15 minutes."
+
+      - alert: WorkerFailuresHigh
+        expr: increase(worker_job_failures_total[15m]) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Worker failures increasing"
+          description: "Worker has multiple failures in the last 15 minutes."
+
+      - alert: CrashLoopingPods
+        expr: increase(kube_pod_container_status_restarts_total[15m]) > 3
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Potential crash looping"
+          description: "Container restarts increased in the last 15 minutes."
