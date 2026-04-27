@@ -137,7 +137,7 @@
       },
       "targets": [
         {
-          "expr": "max(worker_last_success_timestamp)",
+          "expr": "max(worker_last_success_timestamp) * 1000",
           "legendFormat": "last_success",
           "refId": "A"
         }
@@ -194,20 +194,13 @@
       "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
       "fieldConfig": {
         "defaults": {
-          "mappings": [
-            {
-              "options": {
-                "0": {"index": 0, "text": "Healthy"},
-                "1": {"index": 1, "text": "Stalled"}
-              },
-              "type": "value"
-            }
-          ],
+          "unit": "s",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {"color": "green", "value": null},
-              {"color": "red", "value": 1}
+              {"color": "yellow", "value": 120},
+              {"color": "red", "value": 300}
             ]
           }
         },
@@ -222,12 +215,12 @@
       },
       "targets": [
         {
-          "expr": "(time() - max(worker_last_success_timestamp)) > 900",
-          "legendFormat": "stalled",
+          "expr": "time() - max(worker_last_success_timestamp)",
+          "legendFormat": "freshness_seconds",
           "refId": "A"
         }
       ],
-      "title": "Worker stalled indicator",
+      "title": "Worker freshness seconds",
       "type": "stat"
     }
   ],
