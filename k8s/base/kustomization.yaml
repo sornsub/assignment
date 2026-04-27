@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: agnos-devops
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - postgres.yaml
+  - api-deployment.yaml
+  - api-service.yaml
+  - api-hpa.yaml
+  - worker-deployment.yaml
+  - worker-service.yaml
+# Create secret from secret.yaml.example (copy to secret.yaml first) or by CLI:
+# kubectl create secret generic app-secret -n agnos-devops --from-literal=POSTGRES_DB=app_db --from-literal=POSTGRES_USER=app_user --from-literal=POSTGRES_PASSWORD=change_me

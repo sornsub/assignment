@@ -1,78 +1,123 @@
-# Project Overview
+# Agnos DevOps Assignment (Production-minded, Local/Demo Runnable)
 
-This README provides a comprehensive overview of the project, including its architecture, components, setup instructions, deployment guide, monitoring setup, and failure scenario handling.
+## 1) Architecture overview
 
-## Architecture Overview
+This repository contains:
+- **FastAPI API service** with health/readiness/metrics/data endpoints.
+- **Python worker service** that updates today's PostgreSQL records periodically.
+- **PostgreSQL** for local/demo persistence.
+- **Prometheus + Grafana** with auto-provisioned datasources and dashboard.
+- **Kubernetes manifests** (base + dev/uat/prod overlays with Kustomize).
+- **GitHub Actions CI/CD** (lint, tests, image build, Trivy scan, mocked deploy).
 
-The project follows a microservices architecture, where each service is responsible for a specific functionality. This separation allows for better scalability and maintainability. The main components include:
+> PostgreSQL deployed inside Kubernetes is for local/demo only. For production, use a managed database such as Amazon RDS.
 
-- **API Gateway:** Routes requests to the appropriate backend services.
-- **Service A:** Handles user authentication and authorization.
-- **Service B:** Manages data processing and storage.
-- **Service C:** Provides reporting functionalities.
+## 2) Repository structure
 
-## Components Description
+```text
+app/
+  api/
+  worker/
+k8s/
+  base/
+  overlays/{dev,uat,prod}/
+  observability/
+grafana/
+prometheus/
+docs/
+.github/workflows/
+```
 
-- **API Gateway:** 
-  - Acts as a single entry point for clients, ensuring that requests are properly routed.
-  - Provides load balancing and security features.
+## 3) Local setup instructions
 
-- **Service A:** 
-  - Implemented using [Framework X].
-  - Responsible for user management and session handling.
-
-- **Service B:** 
-  - Built with [Database Y].
-  - Stores all user data and application settings.
-
-- **Service C:** 
-  - Generates reports based on user activities.
-  - Uses [Reporting Tool Z] for data visualization.
-
-## Setup Instructions
-
-1. **Clone the repository:**
+1. Copy env file:
    ```bash
-   git clone https://github.com/sornsub/assignment.git
-   cd assignment
+   cp .env.example .env
    ```
-2. **Install dependencies:**
+2. Start everything:
    ```bash
-   npm install
-   ```
-3. **Configure environment variables:** 
-   Create a `.env` file in the root directory and set the following variables:
-   ```
-   DATABASE_URL=<your_database_url>
-   JWT_SECRET=<your_jwt_secret>
-   ```
-4. **Run the application:**
-   ```bash
-   npm start
+   docker compose up --build
    ```
 
-## Deployment Guide
+## 4) Docker Compose usage
 
-To deploy the application, follow these steps:
-1. **Build the application:**
-   ```bash
-   npm run build
-   ```
-2. **Deploy to cloud provider:**
-   Use Docker or any preferred CI/CD pipeline to deploy the built application to your cloud provider (e.g., AWS, Azure).
+Main services exposed locally:
+- API: http://localhost:8000
+- Worker metrics: http://localhost:8001/metrics
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3000
 
-## Monitoring Setup
+Default Grafana login:
+- Username: `admin`
+- Password: `admin`
 
-Set up monitoring for the application using [Monitoring Tool]. This includes:
-- Configuring alerts for critical errors.
-- Setting up dashboards to visualize application health and performance.
+Verification commands:
+```bash
+curl http://localhost:8000/health
+curl http://localhost:8000/ready
+curl http://localhost:8000/records/today
+curl http://localhost:8000/metrics
+curl http://localhost:8001/metrics
+```
 
-## Failure Scenario Handling
+## 5) Kubernetes deployment instructions
 
-To handle failures, implement the following strategies:
-- **Graceful degradation:** Ensure the application remains partially functional during failures.
-- **Retries:** Automatically retry failed requests up to three times before logging the error.
-- **Backups:** Regularly back up the database to prevent data loss. 
+Create secret (demo):
+```bash
+kubectl apply -f k8s/base/secret.yaml.example
+```
 
-### Conclusion
-With this setup, the application should be robust, maintainable, and resilient to common issues. Happy coding!
+Deploy app (dev overlay):
+```bash
+kubectl apply -k k8s/overlays/dev
+```
+
+Deploy observability:
+```bash
+kubectl apply -f k8s/observability/
+```
+
+Also available:
+```bash
+kubectl apply -k k8s/overlays/uat
+kubectl apply -k k8s/overlays/prod
+```
+
+## 6) EKS deployment summary
+
+See `docs/eks-deployment.md` for EKS-oriented guidance: using ECR, RDS, ingress/TLS, RBAC, IRSA, and external secrets.
+
+## 7) CI/CD explanation
+
+Workflow: `.github/workflows/ci-cd.yaml`
+- Lint (Python compile check)
+- Unit tests (`pytest`)
+- Docker Buildx image builds
+- Trivy image scan
+- Mocked deploy step (no real cloud credentials required)
+
+## 8) Monitoring explanation
+
+- Prometheus scrapes API/Worker metrics.
+- Grafana auto-provisions datasources:
+  - Prometheus Local
+  - Prometheus UAT
+  - Prometheus PROD
+- Dashboard `Agnos DevOps Overview` supports datasource switching via `DS_PROMETHEUS`.
+
+See `docs/observability.md`.
+
+## 9) Failure scenario summary
+
+Covered in `docs/failure-scenarios.md`:
+- API crashes during peak
+- Worker failure/retry behavior
+- Bad deployment rollback
+- Kubernetes node failure handling
+
+## 10) Download repository as ZIP from GitHub
+
+1. Open the repository page on GitHub.
+2. Click **Code**.
+3. Click **Download ZIP**.
+4. Unzip locally and run `docker compose up --build`.

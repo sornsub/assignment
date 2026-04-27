@@ -1,0 +1,73 @@
+name: ci-cd
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  lint-test-build-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install API dependencies
+        run: pip install -r app/api/requirements.txt
+
+      - name: Lint (basic syntax check)
+        run: |
+          python -m py_compile app/api/main.py app/api/database.py app/api/models.py app/api/observability.py
+          python -m py_compile app/worker/worker.py app/worker/database.py app/worker/observability.py
+
+      - name: Run tests
+        run: |
+          cd app/api
+          pytest -q
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: app/api
+          file: app/api/Dockerfile
+          tags: local/agnos-api:ci
+          push: false
+          load: true
+
+      - name: Build Worker image
+        uses: docker/build-push-action@v6
+        with:
+          context: app/worker
+          file: app/worker/Dockerfile
+          tags: local/agnos-worker:ci
+          push: false
+          load: true
+
+      - name: Trivy scan API image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: local/agnos-api:ci
+          format: table
+          exit-code: '0'
+          ignore-unfixed: true
+
+      - name: Trivy scan Worker image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: local/agnos-worker:ci
+          format: table
+          exit-code: '0'
+          ignore-unfixed: true
+
+      - name: Mocked deploy
+        run: |
+          echo "Mock deploy step: this is where kubectl/helm deployment to dev/uat/prod would run."
+          echo "No cloud credentials required by default in this assignment."

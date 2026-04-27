@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: agnos-devops
+data:
+  APP_ENV: dev
+  LOG_LEVEL: INFO
+  WORKER_INTERVAL_SECONDS: "30"
+  WORKER_MAX_RETRIES: "3"
+  WORKER_RETRY_BACKOFF_SECONDS: "5"
