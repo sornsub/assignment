@@ -2,15 +2,41 @@ name: ci-cd
 
 on:
   push:
-    branches: ["**"]
+    branches: ["dev", "uat", "main"]
   pull_request:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_OWNER: sornsub
+  API_IMAGE_NAME: agnos-api
+  WORKER_IMAGE_NAME: agnos-worker
 
 jobs:
   lint-test-build-scan:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set environment variables
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "ENV_NAME=prod" >> $GITHUB_ENV
+          else
+            echo "ENV_NAME=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          fi
+
+          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Set image tags
+        run: |
+          echo "API_IMAGE=${REGISTRY}/${IMAGE_OWNER}/${API_IMAGE_NAME}:${ENV_NAME}-${GITHUB_RUN_NUMBER}-${SHORT_SHA}" >> $GITHUB_ENV
+          echo "WORKER_IMAGE=${REGISTRY}/${IMAGE_OWNER}/${WORKER_IMAGE_NAME}:${ENV_NAME}-${GITHUB_RUN_NUMBER}-${SHORT_SHA}" >> $GITHUB_ENV
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -20,12 +46,12 @@ jobs:
       - name: Install API dependencies
         run: pip install -r app/api/requirements.txt
 
-      - name: Lint (basic syntax check)
+      - name: Lint basic syntax check
         run: |
           python -m py_compile app/api/main.py app/api/database.py app/api/models.py app/api/observability.py
           python -m py_compile app/worker/worker.py app/worker/database.py app/worker/observability.py
 
-      - name: Run tests
+      - name: Run API tests
         working-directory: app/api
         env:
           PYTHONPATH: .
@@ -34,7 +60,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build API image
+      - name: Build API image for scan
         uses: docker/build-push-action@v6
         with:
           context: app/api
@@ -43,7 +69,7 @@ jobs:
           push: false
           load: true
 
-      - name: Build Worker image
+      - name: Build Worker image for scan
         uses: docker/build-push-action@v6
         with:
           context: app/worker
@@ -57,7 +83,7 @@ jobs:
         with:
           image-ref: local/agnos-api:ci
           format: table
-          exit-code: '0'
+          exit-code: "0"
           ignore-unfixed: true
 
       - name: Trivy scan Worker image
@@ -65,10 +91,43 @@ jobs:
         with:
           image-ref: local/agnos-worker:ci
           format: table
-          exit-code: '0'
+          exit-code: "0"
           ignore-unfixed: true
+
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push API image to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: app/api
+          file: app/api/Dockerfile
+          tags: ${{ env.API_IMAGE }}
+          push: true
+
+      - name: Push Worker image to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: app/worker
+          file: app/worker/Dockerfile
+          tags: ${{ env.WORKER_IMAGE }}
+          push: true
+
+      - name: Show image tags
+        run: |
+          echo "API image: $API_IMAGE"
+          echo "Worker image: $WORKER_IMAGE"
 
       - name: Mocked deploy
         run: |
-          echo "Mock deploy step: this is where kubectl/helm deployment to dev/uat/prod would run."
-          echo "No cloud credentials required by default in this assignment."
+          echo "Mock deploy to environment: $ENV_NAME"
+          echo "API image would be deployed as: $API_IMAGE"
+          echo "Worker image would be deployed as: $WORKER_IMAGE"
+          echo "No Kubernetes credentials required by default in this assignment."
