@@ -6,7 +6,9 @@ resources:
   - api-deployment.yaml
   - api-service.yaml
   - api-hpa.yaml
+  - api-pdb.yaml
   - worker-deployment.yaml
+  - worker-pdb.yaml
   - worker-service.yaml
 # Create app-secret in overlays (local/demo) or by CLI, for example:
 # kubectl create secret generic app-secret --from-literal=POSTGRES_DB=app_db --from-literal=POSTGRES_USER=app_user --from-literal=POSTGRES_PASSWORD=change_me
