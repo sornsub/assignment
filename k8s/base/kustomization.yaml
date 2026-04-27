@@ -8,5 +8,5 @@ resources:
   - api-hpa.yaml
   - worker-deployment.yaml
   - worker-service.yaml
-# Create secret from secret.yaml.example (copy to secret.yaml first) or by CLI:
-# kubectl create secret generic app-secret -n agnos-devops --from-literal=POSTGRES_DB=app_db --from-literal=POSTGRES_USER=app_user --from-literal=POSTGRES_PASSWORD=change_me
+# Create app-secret in overlays (local/demo) or by CLI, for example:
+# kubectl create secret generic app-secret --from-literal=POSTGRES_DB=app_db --from-literal=POSTGRES_USER=app_user --from-literal=POSTGRES_PASSWORD=change_me

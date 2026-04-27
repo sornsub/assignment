@@ -11,14 +11,48 @@ data:
     rule_files:
       - /etc/prometheus/rules/prometheus-rules.yml
     scrape_configs:
-      - job_name: api
+      - job_name: api-dev
         metrics_path: /metrics
         static_configs:
-          - targets: ['api:8000']
-      - job_name: worker
+          - targets: ['api.agnos-devops-dev.svc.cluster.local:8000']
+            labels:
+              env: dev
+              service: api
+      - job_name: worker-dev
         metrics_path: /metrics
         static_configs:
-          - targets: ['worker:8001']
+          - targets: ['worker.agnos-devops-dev.svc.cluster.local:8001']
+            labels:
+              env: dev
+              service: worker
+      - job_name: api-uat
+        metrics_path: /metrics
+        static_configs:
+          - targets: ['api.agnos-devops-uat.svc.cluster.local:8000']
+            labels:
+              env: uat
+              service: api
+      - job_name: worker-uat
+        metrics_path: /metrics
+        static_configs:
+          - targets: ['worker.agnos-devops-uat.svc.cluster.local:8001']
+            labels:
+              env: uat
+              service: worker
+      - job_name: api-prod
+        metrics_path: /metrics
+        static_configs:
+          - targets: ['api.agnos-devops-prod.svc.cluster.local:8000']
+            labels:
+              env: prod
+              service: api
+      - job_name: worker-prod
+        metrics_path: /metrics
+        static_configs:
+          - targets: ['worker.agnos-devops-prod.svc.cluster.local:8001']
+            labels:
+              env: prod
+              service: worker
 ---
 apiVersion: apps/v1
 kind: Deployment

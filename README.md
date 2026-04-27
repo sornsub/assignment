@@ -1,128 +1,94 @@
-# Agnos DevOps Assignment (Production-minded, Local/Demo Runnable)
+# Agnos DevOps Assignment (Environment-Separated Local Demo)
 
-## 1) Architecture overview
+This project runs the same app stack in **dev**, **uat**, and **prod (demo)** modes for local Docker Compose and Kubernetes/Minikube, while keeping monitoring centralized.
 
-This repository contains:
-- **FastAPI API service** with health/readiness/metrics/data endpoints.
-- **Python worker service** that updates today's PostgreSQL records periodically.
-- **PostgreSQL** for local/demo persistence.
-- **Prometheus + Grafana** with auto-provisioned datasources and dashboard.
-- **Kubernetes manifests** (base + dev/uat/prod overlays with Kustomize).
-- **GitHub Actions CI/CD** (lint, tests, image build, Trivy scan, mocked deploy).
+> ⚠️ Included secrets are for local demo/assignment use only. Do **not** commit real production secrets.
+> In real systems, use External Secrets, Sealed Secrets, SOPS, Vault, or a cloud secret manager.
 
-> PostgreSQL deployed inside Kubernetes is for local/demo only. For production, use a managed database such as Amazon RDS.
+## Architecture Summary
 
-## 2) Repository structure
+- App workloads run in separate namespaces:
+  - `agnos-devops-dev`
+  - `agnos-devops-uat`
+  - `agnos-devops-prod`
+- Monitoring runs centrally in:
+  - `agnos-monitoring`
+- Prometheus scrapes app services across namespaces via Kubernetes DNS.
+- Grafana uses one Prometheus datasource and supports filtering by `env` label.
+- Config is separated per environment via overlay ConfigMap patches.
+- Secrets are separated per environment via overlay Secret manifests (demo-only).
+- Images are separated by moving tags:
+  - `dev-latest`, `uat-latest`, `prod-latest`
+- CI/CD keeps immutable tags for traceability/rollback:
+  - `<env>-<github_run_number>-<short_sha>`
 
-```text
-app/
-  api/
-  worker/
-k8s/
-  base/
-  overlays/{dev,uat,prod}/
-  observability/
-grafana/
-prometheus/
-docs/
-.github/workflows/
-```
+## Docker Compose
 
-## 3) Local setup instructions
+Create/select env file and run:
 
-1. Copy env file:
-   ```bash
-   cp .env.example .env
-   ```
-2. Start everything:
-   ```bash
-   docker compose up --build
-   ```
+- Dev:
+  ```bash
+  docker compose --env-file .env.dev up -d --build
+  ```
+- UAT:
+  ```bash
+  docker compose --env-file .env.uat up -d --build
+  ```
+- Prod demo:
+  ```bash
+  docker compose --env-file .env.prod up -d --build
+  ```
 
-## 4) Docker Compose usage
-
-Main services exposed locally:
+Endpoints:
 - API: http://localhost:8000
 - Worker metrics: http://localhost:8001/metrics
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3000
 
-Default Grafana login:
-- Username: `admin`
-- Password: `admin`
-
-Verification commands:
+Health checks:
 ```bash
 curl http://localhost:8000/health
 curl http://localhost:8000/ready
-curl http://localhost:8000/records/today
-curl http://localhost:8000/metrics
-curl http://localhost:8001/metrics
 ```
 
-## 5) Kubernetes deployment instructions
+## Kubernetes / Minikube
 
-Create ns :
-```bash
-kubectl create ns agnos-devops
-```
+Deploy each environment:
 
-Create secret (demo):
-```bash
-kubectl apply -f k8s/base/secret.yaml.example
-```
-
-Deploy app (dev overlay):
 ```bash
 kubectl apply -k k8s/overlays/dev
-```
-
-Deploy observability:
-```bash
-kubectl apply -f k8s/observability/
-```
-
-Also available:
-```bash
 kubectl apply -k k8s/overlays/uat
 kubectl apply -k k8s/overlays/prod
 ```
 
-## 6) EKS deployment summary
+Deploy centralized monitoring:
 
-See `docs/eks-deployment.md` for EKS-oriented guidance: using ECR, RDS, ingress/TLS, RBAC, IRSA, and external secrets.
+```bash
+kubectl apply -f k8s/observability/
+```
 
-## 7) CI/CD explanation
+Checks:
 
-Workflow: `.github/workflows/ci-cd.yaml`
-- Lint (Python compile check)
-- Unit tests (`pytest`)
-- Docker Buildx image builds
-- Trivy image scan
-- Mocked deploy step (no real cloud credentials required)
+```bash
+kubectl get pods -n agnos-devops-dev
+kubectl get pods -n agnos-devops-uat
+kubectl get pods -n agnos-devops-prod
+kubectl get pods -n agnos-monitoring
+kubectl get svc -n agnos-monitoring
+```
 
-## 8) Monitoring explanation
+Port-forward:
 
-- Prometheus scrapes API/Worker metrics.
-- Grafana auto-provisions datasources:
-  - Prometheus Local
-  - Prometheus UAT
-  - Prometheus PROD
-- Dashboard `Agnos DevOps Overview` supports datasource switching via `DS_PROMETHEUS`.
+```bash
+kubectl -n agnos-devops-dev port-forward svc/api 8000:8000
+kubectl -n agnos-devops-uat port-forward svc/api 8001:8000
+kubectl -n agnos-devops-prod port-forward svc/api 8002:8000
+kubectl -n agnos-monitoring port-forward svc/grafana 3000:3000
+kubectl -n agnos-monitoring port-forward svc/prometheus 9090:9090
+```
 
-See `docs/observability.md`.
+## Notes
 
-## 9) Failure scenario summary
-
-Covered in `docs/failure-scenarios.md`:
-- API crashes during peak
-- Worker failure/retry behavior
-- Bad deployment rollback
-- Kubernetes node failure handling
-
-## 10) Download repository as ZIP from GitHub
-
-1. Open the repository page on GitHub.
-2. Click **Code**.
-3. Click **Download ZIP**.
-4. Unzip locally and run `docker compose up --build`.
+- `k8s/base` is environment-neutral (no hard-coded namespace).
+- Overlays control env-specific namespace, secret values, config values, image tags, and scaling.
+- `latest` tags are kept for local demo convenience; immutable tags remain for CI/CD traceability.

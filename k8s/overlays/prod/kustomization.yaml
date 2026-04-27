@@ -6,7 +6,7 @@ resources:
   - namespace.yaml
   - ../../base
   - secret.yaml
-  
+
 images:
   - name: ghcr.io/sornsub/agnos-api
     newTag: prod-latest
@@ -14,6 +14,10 @@ images:
     newTag: prod-latest
 
 patches:
+  - path: configmap-patch.yaml
+    target:
+      kind: ConfigMap
+      name: app-config
   - target:
       kind: Deployment
       name: api

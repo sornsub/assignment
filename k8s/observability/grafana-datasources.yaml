@@ -7,26 +7,10 @@ data:
   datasources.yaml: |
     apiVersion: 1
     datasources:
-      - name: Prometheus Local
-        uid: prometheus-local
+      - name: Prometheus
+        uid: prometheus
         type: prometheus
         access: proxy
-        url: http://prometheus.agnos-devops-dev.svc.cluster.local:9090
+        url: http://prometheus:9090
         isDefault: true
-        editable: true
-
-      - name: Prometheus UAT
-        uid: prometheus-uat
-        type: prometheus
-        access: proxy
-        # UAT placeholder endpoint; replace for real cluster routing if needed.
-        url: http://prometheus.agnos-devops-uat.svc.cluster.local:9090
-        editable: true
-
-      - name: Prometheus PROD
-        uid: prometheus-prod
-        type: prometheus
-        access: proxy
-        # PROD placeholder endpoint; replace for real cluster routing if needed.
-        url: http://prometheus.agnos-devops-prod.svc.cluster.local:9090
         editable: true
