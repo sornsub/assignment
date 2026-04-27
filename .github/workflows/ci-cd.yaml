@@ -26,9 +26,10 @@ jobs:
           python -m py_compile app/worker/worker.py app/worker/database.py app/worker/observability.py
 
       - name: Run tests
-        run: |
-          cd app/api
-          pytest -q
+        working-directory: app/api
+        env:
+          PYTHONPATH: .
+        run: pytest -q
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
