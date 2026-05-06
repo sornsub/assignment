@@ -6,6 +6,7 @@ resources:
   - namespace.yaml
   - ../../base
   - secret.yaml
+  - alertmanager-slack-secret.yaml
 
 images:
   - name: ghcr.io/sornsub/agnos-api

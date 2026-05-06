@@ -2,14 +2,15 @@ global:
   resolve_timeout: 5m
 
 route:
-  receiver: log-receiver
+  receiver: slack-receiver
   group_by: ['alertname', 'job', 'env']
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 2h
 
 receivers:
-  - name: log-receiver
-    webhook_configs:
-      - url: http://127.0.0.1:5001/
+  - name: slack-receiver
+    slack_configs:
+      - api_url: ${SLACK_WEBHOOK_URL}
+        channel: '#alerts'
         send_resolved: true
