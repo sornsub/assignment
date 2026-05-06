@@ -35,7 +35,7 @@ data:
               summary: Worker stalled
               description: Worker has not succeeded for more than 15 minutes.
 
-          - alert: WorkerFailures
+          - alert: WorkerFailuresHigh
             expr: increase(worker_job_failures_total[15m]) > 3
             for: 5m
             labels:
@@ -44,7 +44,7 @@ data:
               summary: Worker failures high
               description: Worker failures rising in the last 15 minutes.
 
-          - alert: CrashLooping
+          - alert: CrashLoopingPods
             expr: increase(kube_pod_container_status_restarts_total[15m]) > 3
             for: 10m
             labels:
@@ -52,3 +52,30 @@ data:
             annotations:
               summary: Crash looping pods
               description: Pod restart count increased significantly.
+
+          - alert: ApiTargetDown
+            expr: up{job=~"api.*"} == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: API target is down
+              description: Prometheus cannot scrape API target for {{ $labels.job }} ({{ $labels.instance }}).
+
+          - alert: WorkerTargetDown
+            expr: up{job=~"worker.*"} == 0
+            for: 2m
+            labels:
+              severity: critical
+            annotations:
+              summary: Worker target is down
+              description: Prometheus cannot scrape worker target for {{ $labels.job }} ({{ $labels.instance }}).
+
+          - alert: ScrapeTargetDownByEnv
+            expr: up{env=~"dev|uat|prod"} == 0
+            for: 3m
+            labels:
+              severity: warning
+            annotations:
+              summary: Scrape target down in {{ $labels.env }}
+              description: Prometheus scrape target {{ $labels.job }} is down in env={{ $labels.env }} ({{ $labels.instance }}).
