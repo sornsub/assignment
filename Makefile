@@ -1,5 +1,5 @@
 .PHONY: \
-	up down test validate-json \
+	up down test validate-json validate-alerts alerts-local alerts-k8s \
 	compose-dev compose-uat compose-prod \
 	deploy-dev deploy-uat deploy-prod deploy-monitoring \
 	pods-dev pods-uat pods-prod pods-monitoring \
@@ -16,6 +16,23 @@ test:
 
 validate-json:
 	python -m json.tool grafana/dashboards/agnos-overview.json > /tmp/agnos-dashboard.json
+
+validate-alerts:
+	python -c "import yaml; yaml.safe_load(open('prometheus/prometheus.yml')); yaml.safe_load(open('prometheus/prometheus-rules.yml')); yaml.safe_load(open('alertmanager/alertmanager.yml')); yaml.safe_load_all(open('k8s/observability/prometheus.yaml')); yaml.safe_load(open('k8s/observability/prometheus-rules.yaml')); list(yaml.safe_load_all(open('k8s/observability/alertmanager.yaml'))); print('YAML validation passed')"
+	@if command -v promtool >/dev/null 2>&1; then \
+		promtool check config prometheus/prometheus.yml && \
+		promtool check rules prometheus/prometheus-rules.yml; \
+	else \
+		echo "promtool not installed; run 'promtool check config prometheus/prometheus.yml' and 'promtool check rules prometheus/prometheus-rules.yml' manually."; \
+	fi
+
+alerts-local:
+	docker compose --env-file .env.dev up -d prometheus alertmanager
+
+alerts-k8s:
+	kubectl apply -f k8s/observability/prometheus-rules.yaml
+	kubectl apply -f k8s/observability/alertmanager.yaml
+	kubectl apply -f k8s/observability/prometheus.yaml
 
 compose-dev:
 	docker compose --env-file .env.dev up -d --build

@@ -45,3 +45,21 @@ groups:
         annotations:
           summary: "Potential crash looping"
           description: "Container restarts increased in the last 15 minutes."
+
+      - alert: ApiTargetDown
+        expr: up{job=~"api.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API target is down"
+          description: "Prometheus cannot scrape API target for {{ $labels.job }} ({{ $labels.instance }})."
+
+      - alert: WorkerTargetDown
+        expr: up{job=~"worker.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Worker target is down"
+          description: "Prometheus cannot scrape worker target for {{ $labels.job }} ({{ $labels.instance }})."
