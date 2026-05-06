@@ -74,10 +74,13 @@ services:
     image: prom/alertmanager:v0.28.1
     container_name: alertmanager
     command:
-      - "--config.file=/etc/alertmanager/alertmanager.yml"
-      - "--log.level=info"
+      - /bin/sh
+      - -c
+      - envsubst < /etc/alertmanager/alertmanager.yml.tmpl > /etc/alertmanager/alertmanager.yml && exec /bin/alertmanager --config.file=/etc/alertmanager/alertmanager.yml --log.level=info
+    environment:
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
     volumes:
-      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml.tmpl:ro
     ports:
       - "9093:9093"
 
@@ -90,8 +93,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
-      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
