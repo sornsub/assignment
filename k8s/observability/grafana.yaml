@@ -30,6 +30,8 @@ spec:
               mountPath: /etc/grafana/provisioning/datasources
             - name: grafana-dashboards-provider
               mountPath: /etc/grafana/provisioning/dashboards
+            - name: grafana-alerting
+              mountPath: /etc/grafana/provisioning/alerting
             - name: grafana-dashboard-json
               mountPath: /var/lib/grafana/dashboards
       volumes:
@@ -39,6 +41,9 @@ spec:
         - name: grafana-dashboards-provider
           configMap:
             name: grafana-dashboards-provider
+        - name: grafana-alerting
+          configMap:
+            name: grafana-alerting-provisioning
         - name: grafana-dashboard-json
           configMap:
             name: grafana-dashboard-agnos-overview
@@ -62,6 +67,35 @@ data:
           path: /var/lib/grafana/dashboards
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-alerting-provisioning
+  namespace: agnos-monitoring
+data:
+  contact-points.yaml: |
+    apiVersion: 1
+
+    contactPoints:
+      - orgId: 1
+        name: Alertmanager
+        receivers:
+          - uid: alertmanager
+            type: prometheus-alertmanager
+            settings:
+              url: http://alertmanager:9093
+              disableResolveMessage: false
+  notification-policies.yaml: |
+    apiVersion: 1
+
+    policies:
+      - orgId: 1
+        receiver: Alertmanager
+        group_by:
+          - alertname
+          - job
+          - env
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: grafana
@@ -77,3 +111,4 @@ spec:
     - name: http
       port: 3000
       targetPort: 3000
+---
